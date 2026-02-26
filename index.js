@@ -1,81 +1,195 @@
 const express = require("express");
+const cors = require("cors");
 
 const app = express();
 
-const students = [
-  { id: 1, name: "Aarav Sharma", branch: "CSE", semester: 8, cgpa: 9.3 },
-  { id: 2, name: "Ishita Verma", branch: "IT", semester: 7, cgpa: 8.9 },
-  { id: 3, name: "Rohan Kulkarni", branch: "ECE", semester: 6, cgpa: 8.4 },
-  { id: 4, name: "Meera Iyer", branch: "CSE", semester: 8, cgpa: 9.1 },
-  { id: 5, name: "Kunal Deshmukh", branch: "IT", semester: 5, cgpa: 7.8 },
-  { id: 6, name: "Ananya Reddy", branch: "CSE", semester: 6, cgpa: 8.7 },
-  { id: 7, name: "Vikram Patil", branch: "ECE", semester: 7, cgpa: 8.2 },
-  { id: 8, name: "Priyanka Nair", branch: "AI", semester: 4, cgpa: 8.8 },
-  { id: 9, name: "Harsh Mehta", branch: "Data Science", semester: 5, cgpa: 8.0 },
-  { id: 10, name: "Neha Gupta", branch: "CSE", semester: 6, cgpa: 7.9 }
+app.use(cors());
+app.use(express.json());
+
+
+let products = [
+  {
+    id: 1,
+    name: "Wireless Mouse",
+    category: "Electronics",
+    price: 799,
+    stock: 25,
+    rating: 4.3
+  },
+  {
+    id: 2,
+    name: "Running Shoes",
+    category: "Footwear",
+    price: 2499,
+    stock: 40,
+    rating: 4.5
+  },
+  {
+    id: 3,
+    name: "Laptop Stand",
+    category: "Accessories",
+    price: 999,
+    stock: 30,
+    rating: 4.2
+  },
+  {
+    id: 4,
+    name: "Smart Watch",
+    category: "Electronics",
+    price: 4999,
+    stock: 12,
+    rating: 4.4
+  },
+  {
+    id: 5,
+    name: "Backpack",
+    category: "Fashion",
+    price: 1599,
+    stock: 50,
+    rating: 4.1
+  }
 ];
 
 
-app.get("/", (req, res) => {
-  res.send("🚀 Student API is running successfully!");
+
+app.get("/products", (req, res) => {
+  res.status(200).json(products);
 });
 
 
-app.get("/students", (req, res) => {
-  res.status(200).json(students);
-});
 
+app.get("/products/:id", (req, res) => {
 
-app.get("/students/topper", (req, res) => {
-  if (students.length === 0) {
-    return res.status(404).json({ message: "No students found" });
+  const id = parseInt(req.params.id);
+
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({
+      message: "Product not found"
+    });
   }
 
-  const topper = [...students].sort((a, b) => b.cgpa - a.cgpa)[0];
-  res.status(200).json(topper);
+  res.status(200).json(product);
 });
 
 
-app.get("/students/average", (req, res) => {
-  const sum = students.reduce((acc, curr) => acc + curr.cgpa, 0);
-  const average = sum / students.length;
-
-  res.status(200).json({ average });
-});
 
 
-app.get("/students/count", (req, res) => {
-  res.status(200).json({ totalStudents: students.length });
-});
 
+app.get("/products/category/:categoryName", (req, res) => {
 
-app.get("/students/:id", (req, res) => {
-  const studentId = Number(req.params.id);
-  const student = students.find(s => s.id === studentId);
+  const category = req.params.categoryName;
 
-  if (!student) {
-    return res.status(404).json({ message: "Student Not Found" });
-  }
-
-  res.status(200).json(student);
-});
-
-
-app.get("/students/branch/:branchName", (req, res) => {
-  const branchName = req.params.branchName.toLowerCase();
-
-  const studentBranch = students.filter(
-    s => s.branch.toLowerCase() === branchName
+  const filteredProducts = products.filter(
+    p => p.category.toLowerCase() === category.toLowerCase()
   );
 
-  if (studentBranch.length === 0) {
-    return res.status(404).json({ message: "No students found for this branch" });
-  }
+  res.status(200).json(filteredProducts);
 
-  res.status(200).json(studentBranch);
 });
 
 
-app.listen(3000, () => {
-  console.log("Server started on port 3000");
+
+
+
+app.post("/products", (req, res) => {
+
+  const newId =
+    products.length > 0
+      ? products[products.length - 1].id + 1
+      : 1;
+
+  const newProduct = {
+    id: newId,
+    name: req.body.name,
+    category: req.body.category,
+    price: req.body.price,
+    stock: req.body.stock,
+    rating: req.body.rating
+  };
+
+  products.push(newProduct);
+
+  res.status(201).json(newProduct);
+
+});
+
+
+
+
+
+app.put("/products/:id", (req, res) => {
+
+  const id = parseInt(req.params.id);
+
+  const index = products.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({
+      message: "Product not found"
+    });
+  }
+
+  const updatedProduct = {
+    id: id,
+    name: req.body.name,
+    category: req.body.category,
+    price: req.body.price,
+    stock: req.body.stock,
+    rating: req.body.rating
+  };
+
+  products[index] = updatedProduct;
+
+  res.status(200).json(updatedProduct);
+
+});
+
+
+
+
+app.put("/products/:id/stock", (req, res) => {
+
+  const id = parseInt(req.params.id);
+
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({
+      message: "Product not found"
+    });
+  }
+
+  product.stock = req.body.stock;
+
+  res.status(200).json(product);
+
+});
+
+
+
+app.put("/products/:id/price", (req, res) => {
+
+  const id = parseInt(req.params.id);
+
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({
+      message: "Product not found"
+    });
+  }
+
+  product.price = req.body.price;
+
+  res.status(200).json(product);
+
+});
+
+
+const PORT = 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
