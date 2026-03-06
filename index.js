@@ -1,195 +1,82 @@
 const express = require("express");
-const cors = require("cors");
-
 const app = express();
-
-app.use(cors());
+const mongoose = require("mongoose");
 app.use(express.json());
 
+mongoose.connect("mongodb+srv://rishi6665:rishi6665@cluster0.uxgdguj.mongodb.net/?appName=Cluster0")
+.then(()=> console.log("MongoDB connected succesfully"))
+.catch((error)=> console.log("MongoDB" , error))
 
-let products = [
-  {
-    id: 1,
-    name: "Wireless Mouse",
-    category: "Electronics",
-    price: 799,
-    stock: 25,
-    rating: 4.3
-  },
-  {
-    id: 2,
-    name: "Running Shoes",
-    category: "Footwear",
-    price: 2499,
-    stock: 40,
-    rating: 4.5
-  },
-  {
-    id: 3,
-    name: "Laptop Stand",
-    category: "Accessories",
-    price: 999,
-    stock: 30,
-    rating: 4.2
-  },
-  {
-    id: 4,
-    name: "Smart Watch",
-    category: "Electronics",
-    price: 4999,
-    stock: 12,
-    rating: 4.4
-  },
-  {
-    id: 5,
-    name: "Backpack",
-    category: "Fashion",
-    price: 1599,
-    stock: 50,
-    rating: 4.1
-  }
-];
+const userSchema = new mongoose.Schema({
+    name : String,
+    age : Number,
+    email : String
+})
+const User = mongoose.model("user" , userSchema);
 
+app.get("/user" , async (req , res)=>{
+ try{ 
+      const data = await User.find({});
+    res.status(200).json(data);
+}
+catch(error){
+    res.status(500).json({error : error.message})
+}
+})
+app.get("/user/:id" , async (req , res)=>{
+    const id = req.params.id;
+    const data = await User.findById(id);
+    res.status(200).json(data);
+})
+app.post("/user" , async (req , res)=>{
+    try{
+        const user = new User(req.body);
+        await user.save()
+        res.status(201).json(user);
 
+    }
+    catch(error){
+        res.status(500).json({error : error.message})
+    }
+})
+app.post("/users" , async (req , res)=>{
+    const data = await User.insertMany(req.body);
 
-app.get("/products", (req, res) => {
-  res.status(200).json(products);
-});
+    res.status(201).json({ "Added one then one user":data});
+})
+app.delete("/user/:id" ,async  (req , res)=>{
+   try{ const id = req.params.id;
+    const data  = await User.deleteOne({_id : id});
+    res.status(201).json({ "deleted " : data});}
+    catch(error){
+        res
+        .status(500).json({"Error message" : error.message})
+    }
+})
 
-
-
-app.get("/products/:id", (req, res) => {
-
-  const id = parseInt(req.params.id);
-
-  const product = products.find(p => p.id === id);
-
-  if (!product) {
-    return res.status(404).json({
-      message: "Product not found"
+app.put("/user/:id" , async (req , res)=>{
+    const id = req.params.id;
+  try{  const data = await User.findByIdAndUpdate(id , req.body , {
+        new : true,
+        runValidators : true
     });
-  }
-
-  res.status(200).json(product);
-});
-
-
-
-
-
-app.get("/products/category/:categoryName", (req, res) => {
-
-  const category = req.params.categoryName;
-
-  const filteredProducts = products.filter(
-    p => p.category.toLowerCase() === category.toLowerCase()
-  );
-
-  res.status(200).json(filteredProducts);
-
-});
-
-
-
-
-
-app.post("/products", (req, res) => {
-
-  const newId =
-    products.length > 0
-      ? products[products.length - 1].id + 1
-      : 1;
-
-  const newProduct = {
-    id: newId,
-    name: req.body.name,
-    category: req.body.category,
-    price: req.body.price,
-    stock: req.body.stock,
-    rating: req.body.rating
-  };
-
-  products.push(newProduct);
-
-  res.status(201).json(newProduct);
-
-});
-
-
-
-
-
-app.put("/products/:id", (req, res) => {
-
-  const id = parseInt(req.params.id);
-
-  const index = products.findIndex(p => p.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({
-      message: "Product not found"
+    res.status(201).json(data);}
+    catch(error){
+        res.status(500).json({"Error" : error.message})
+    }
+})
+app.patch("/user/:id" , async (req , res)=>{
+    const id = req.params.id;
+  try{  const data = await User.findByIdAndUpdate(id , req.body , {
+        new : true,
+        runValidators : true
     });
-  }
-
-  const updatedProduct = {
-    id: id,
-    name: req.body.name,
-    category: req.body.category,
-    price: req.body.price,
-    stock: req.body.stock,
-    rating: req.body.rating
-  };
-
-  products[index] = updatedProduct;
-
-  res.status(200).json(updatedProduct);
-
-});
-
-
-
-
-app.put("/products/:id/stock", (req, res) => {
-
-  const id = parseInt(req.params.id);
-
-  const product = products.find(p => p.id === id);
-
-  if (!product) {
-    return res.status(404).json({
-      message: "Product not found"
-    });
-  }
-
-  product.stock = req.body.stock;
-
-  res.status(200).json(product);
-
-});
-
-
-
-app.put("/products/:id/price", (req, res) => {
-
-  const id = parseInt(req.params.id);
-
-  const product = products.find(p => p.id === id);
-
-  if (!product) {
-    return res.status(404).json({
-      message: "Product not found"
-    });
-  }
-
-  product.price = req.body.price;
-
-  res.status(200).json(product);
-
-});
-
-
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    res.status(201).json(data);}
+    catch(error){
+        res.status(500).json({"Error" : error.message})
+    }
+})
+app.listen(3000 , ()=>{
+    console.log("Server has started on localhost");
+    
+})
